@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1018">
-<title>Placemark Counter</title>
+<title>Placemark Google Earth Counter</title>
 
 <style>
 :root {
@@ -111,7 +111,7 @@ body {
 
 .brand h1 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 43px);
+  font-size: clamp(24px, 3.4vw, 38px);
   line-height: .95;
   letter-spacing: 1px;
   font-weight: 850;
@@ -405,7 +405,7 @@ footer {
   <header class="header">
     <div class="brand">
       <div class="pin-logo" aria-label="Placemark Counter logo"><span></span></div>
-      <h1>PLACEMARK<span>COUNTER</span></h1>
+      <h1>PLACEMARK GOOGLE EARTH<span>COUNTER</span></h1>
     </div>
 
     <div class="theme-toggle">
@@ -429,7 +429,9 @@ footer {
 
       <textarea id="kmlInput" placeholder="Paste kode KML di sini..."></textarea>
 
-      <button class="count-btn" onclick="analyzeKML()">▣ &nbsp; HITUNG</button>
+      <div id="liveStatus" style="padding: 0 22px 18px; color: var(--muted); font-size: 13px;">
+        Menunggu kode KML...
+      </div>
 
       <div class="privacy">
         🛡️ &nbsp; Proses dilakukan di browser Anda.<br>
@@ -506,6 +508,7 @@ function escapeHTML(text) {
 
 function analyzeKML() {
   const text = document.getElementById('kmlInput').value.trim();
+  const statusEl = document.getElementById('liveStatus');
   const totalEl = document.getElementById('totalPlacemark');
   const folderEl = document.getElementById('totalFolder');
   const body = document.getElementById('folderBody');
@@ -514,13 +517,17 @@ function analyzeKML() {
     totalEl.textContent = '0';
     folderEl.textContent = '0';
     body.innerHTML =
-      '<tr><td colspan="3" class="empty">Belum ada data. Masukkan kode KML lalu klik Hitung.</td></tr>';
+      '<tr><td colspan="3" class="empty">Belum ada data. Masukkan kode KML.</td></tr>';
+    statusEl.textContent = 'Menunggu kode KML...';
     return;
   }
 
   // Count all opening Placemark tags.
   const placemarks = text.match(/<Placemark(?:\s[^>]*)?>/gi) || [];
   totalEl.textContent = placemarks.length.toLocaleString('id-ID');
+  statusEl.textContent = placemarks.length
+    ? `✓ Otomatis diperbarui • ${placemarks.length.toLocaleString('id-ID')} Placemark terdeteksi`
+    : 'Tidak ditemukan Placemark pada kode yang dimasukkan.';
 
   const folderMap = new Map();
 
@@ -616,6 +623,10 @@ function setTheme(theme) {
   const saved = localStorage.getItem('placemark-theme') || 'dark';
   setTheme(saved);
 })();
+
+const kmlInput = document.getElementById('kmlInput');
+kmlInput.addEventListener('input', analyzeKML);
+kmlInput.addEventListener('paste', () => setTimeout(analyzeKML, 0));
 </script>
 
 </body>
