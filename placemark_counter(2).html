@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placemark Counter - Google Earth</title>
+<style>
+* { box-sizing: border-box; }
+
+:root {
+  --bg: #f4f7fb;
+  --bg-soft: #eef3f9;
+  --card: rgba(255,255,255,.88);
+  --card-solid: #ffffff;
+  --text: #172033;
+  --muted: #667085;
+  --border: rgba(15,23,42,.09);
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --accent: #06b6d4;
+  --result: #f8fafc;
+  --shadow: 0 24px 70px rgba(15, 23, 42, .10);
+  --shadow-soft: 0 8px 25px rgba(15, 23, 42, .07);
+}
+
+body.dark {
+  --bg: #080d18;
+  --bg-soft: #0d1525;
+  --card: rgba(18,27,45,.88);
+  --card-solid: #121b2d;
+  --text: #f1f5f9;
+  --muted: #9aa8bd;
+  --border: rgba(255,255,255,.09);
+  --primary: #60a5fa;
+  --primary-dark: #3b82f6;
+  --accent: #22d3ee;
+  --result: #0d1525;
+  --shadow: 0 24px 70px rgba(0,0,0,.35);
+  --shadow-soft: 0 8px 25px rgba(0,0,0,.25);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37,99,235,.13), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(6,182,212,.11), transparent 28%),
+    linear-gradient(145deg, var(--bg), var(--bg-soft));
+  padding: 32px 18px;
+  transition: background .3s ease, color .3s ease;
+}
+
+.container {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 34px;
+  box-shadow: var(--shadow);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: rgba(37,99,235,.08);
+  top: -150px;
+  right: -90px;
+  pointer-events: none;
+}
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--card-solid);
+  color: var(--text);
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(15,23,42,.12);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 14px 0 28px;
+  position: relative;
+}
+
+.logo {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  color: white;
+  font-size: 27px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 12px 28px rgba(37,99,235,.28);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(25px, 4vw, 34px);
+  letter-spacing: -.8px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.editor-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.badge {
+  font-size: 12px;
+  color: var(--primary);
+  background: rgba(37,99,235,.09);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.textarea-wrap {
+  position: relative;
+}
+
+textarea {
+  width: 100%;
+  min-height: 360px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  outline: none;
+  color: var(--text);
+  background: var(--result);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.03);
+  transition: border .2s, box-shadow .2s;
+}
+
+textarea:focus {
+  border-color: rgba(37,99,235,.55);
+  box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+}
+
+textarea::placeholder { color: var(--muted); }
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+button.action {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  transition: transform .18s, box-shadow .18s;
+}
+
+button.action:hover {
+  transform: translateY(-2px);
+}
+
+.sample {
+  background: rgba(37,99,235,.10);
+  color: var(--primary);
+}
+
+.clear {
+  background: rgba(239,68,68,.10);
+  color: #ef4444;
+}
+
+.result {
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  background:
+    linear-gradient(180deg, rgba(37,99,235,.06), transparent 70%),
+    var(--result);
+  box-shadow: var(--shadow-soft);
+}
+
+.label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+}
+
+.count {
+  margin-top: 8px;
+  font-size: clamp(54px, 10vw, 78px);
+  line-height: .95;
+  font-weight: 900;
+  letter-spacing: -4px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.status {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.info {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 15px;
+  background: rgba(37,99,235,.07);
+  border: 1px solid rgba(37,99,235,.08);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 18px;
+  opacity: .8;
+}
+
+@media (max-width: 650px) {
+  body { padding: 14px 10px; }
+  .card { padding: 20px; border-radius: 22px; }
+  .hero { margin-top: 12px; }
+  .logo { width: 50px; height: 50px; flex-basis: 50px; font-size: 23px; }
+  textarea { min-height: 300px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="topbar">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+    </div>
+    <div class="hero">
+      <div class="logo">📍</div>
+      <div>
+        <h1>Placemark Counter</h1>
+        <p class="subtitle">Hitung Placemark dari kode KML / Google Earth secara cepat dan otomatis.</p>
+      </div>
+    </div>
+
+    <div class="editor-header">
+      <span class="editor-title">KML / Google Earth Code</span>
+      <span class="badge">AUTO COUNT</span>
+    </div>
+    <textarea id="kmlInput" placeholder="Paste kode Google Earth / KML di sini...
+
+Contoh:
+<Placemark>
+    <name>1</name>
+    <Point>
+        <coordinates>116.884103005,-1.25010167,0</coordinates>
+    </Point>
+</Placemark>"></textarea>
+
+    <div class="buttons">
+      <button class="action sample" onclick="loadSample()">✦ Coba Contoh</button>
+      <button class="action clear" onclick="clearText()">⌫ Hapus</button>
+    </div>
+
+    <div class="result">
+      <div class="label">Jumlah Placemark</div>
+      <div class="count" id="count">0</div>
+      <div class="status" id="status">Belum ada kode KML yang dimasukkan.</div>
+    </div>
+
+    <div class="info">
+      💡 Sistem menghitung setiap tag <b>&lt;Placemark&gt;</b> pada kode yang kamu masukkan.
+      Perhitungan dilakukan otomatis saat kamu mengetik atau paste kode.
+    </div>
+  </div>
+
+  <footer>Placemark Counter • Google Earth / KML</footer>
+</div>
+
+<script>
+const input = document.getElementById('kmlInput');
+const countEl = document.getElementById('count');
+const statusEl = document.getElementById('status');
+
+function countPlacemarks() {
+  const text = input.value;
+  // Count opening Placemark tags, allowing optional attributes/whitespace.
+  const matches = text.match(/<Placemark(?:\s[^>]*)?>/gi);
+  const count = matches ? matches.length : 0;
+
+  countEl.textContent = count.toLocaleString('id-ID');
+
+  if (!text.trim()) {
+    statusEl.textContent = 'Belum ada kode KML yang dimasukkan.';
+  } else if (count === 0) {
+    statusEl.textContent = 'Tidak ditemukan tag <Placemark>.';
+  } else {
+    statusEl.textContent = `Ditemukan ${count.toLocaleString('id-ID')} Placemark pada kode KML.`;
+  }
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  const dark = document.body.classList.contains('dark');
+  localStorage.setItem('placemarkTheme', dark ? 'dark' : 'light');
+  document.getElementById('themeToggle').textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('placemarkTheme');
+  if (saved === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('themeToggle').textContent = '☀️ Light Mode';
+  }
+}
+
+function clearText() {
+  input.value = '';
+  countPlacemarks();
+  input.focus();
+}
+
+function loadSample() {
+  input.value = `<kml>
+<Document>
+  <Placemark>
+    <name>1</name>
+    <Point><coordinates>116.884103005,-1.25010167,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+    <name>2</name>
+    <Point><coordinates>116.884044677,-1.250133897,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+    <name>3</name>
+    <Point><coordinates>116.88351255,-1.250246906,0</coordinates></Point>
+  </Placemark>
+</Document>
+</kml>`;
+  countPlacemarks();
+}
+
+input.addEventListener('input', countPlacemarks);
+loadTheme();
+countPlacemarks();
+</script>
+</body>
+</html>
