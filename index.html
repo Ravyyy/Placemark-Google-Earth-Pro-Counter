@@ -397,7 +397,6 @@ footer {
   th, td { padding: 13px 14px; }
 }
 </style>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 
 <body>
@@ -425,7 +424,7 @@ footer {
 
       <div class="input-description">
         Paste kode KML Anda di bawah ini<br>
-        lalu klik tombol Hitung.
+        hasil akan diperbarui otomatis.
       </div>
 
       <textarea id="kmlInput" placeholder="Paste kode KML di sini..."></textarea>
@@ -491,7 +490,7 @@ footer {
 
   </main>
 
-  <footer>📍 &nbsp; © 2026 Placemark Counter by Ravy. All rights reserved.</footer>
+  <footer>📍 &nbsp; © 2026 Placemark Counter. All rights reserved.</footer>
 </div>
 
 <script>
@@ -589,8 +588,9 @@ function analyzeKML() {
     }
   }
 
-  const entries = Array.from(folderMap.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  // Pertahankan urutan Folder sesuai kemunculan pertama di KML.
+  // Tidak diurutkan berdasarkan jumlah Placemark.
+  const entries = Array.from(folderMap.entries());
 
   folderEl.textContent = entries.length.toLocaleString('id-ID');
 
